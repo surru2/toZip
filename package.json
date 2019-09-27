@@ -1,0 +1,29 @@
+{
+  "name": "tozip",
+  "version": "1.0.0",
+  "description": "test task",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/surru2/toZip.git"
+  },
+  "keywords": [
+    "zip",
+    "nodejs"
+  ],
+  "author": "panov-va",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/surru2/toZip/issues"
+  },
+  "homepage": "https://github.com/surru2/toZip#readme",
+  "dependencies": {
+    "adm-zip": "^0.4.13",
+    "https-proxy-agent": "^2.2.2",
+    "jsdom": "^15.1.1",
+    "node-fetch": "^2.6.0"
+  }
+}

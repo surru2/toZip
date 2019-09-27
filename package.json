@@ -22,7 +22,6 @@
   "homepage": "https://github.com/surru2/toZip#readme",
   "dependencies": {
     "adm-zip": "^0.4.13",
-    "https-proxy-agent": "^2.2.2",
     "jsdom": "^15.1.1",
     "node-fetch": "^2.6.0"
   }

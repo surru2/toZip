@@ -3,7 +3,7 @@ const jsdom = require('jsdom');
 const { JSDOM } = jsdom;
 
 const getLinks = async () => { //получаем массив ссылок на изображения с https://yandex.ru/images/
-    const body = await fetch(`https://yandex.ru/images/`).then(x=>x.text())
+    const body = await fetch(`https://yandex.ru/images/`)
     const dom = new JSDOM(body);
     return Array.from(dom.window.document.getElementsByTagName('img')) //фильтруем возвращаемые url изображений только с абсолюными путями
         .map(t => t.src)
@@ -18,7 +18,8 @@ const toZip = (links) =>{
         fetch(img)
             .then(x => x.arrayBuffer())     //Преобразуем ответ в буффер и далее добавляем данные в архив
             .then(x => {
-                zip.addFile(i + '.jpg', Buffer.from(x)); //во время каждой итерации добавляем данные и сразу сохраняем его
+                let zip = new AdmZip('files.zip');                 //во время каждой итерации открываем файл (хотя можно и не переназначить и использовать старый zip-объект
+                zip.addFile(i + '.jpg', Buffer.from(x)); //на потребление памяти это не повлияет) добавляем новые данные и сразу пишем его
                 zip.writeZip('files.zip');            //чтобы не держать в памяти архив со всеми изображениями
             });
     })

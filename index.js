@@ -13,15 +13,23 @@ const getLinks = async () => { //получаем массив ссылок на
 const toZip = (links) =>{
     const AdmZip = require('adm-zip');
     const zip = new AdmZip();
-    zip.writeZip('files.zip'); //создаём zip-архив
-    links.map((img, i) => {                 //проходимся по архиву ссылок на изображения
-        fetch(img)
-            .then(x => x.arrayBuffer())     //Преобразуем ответ в буффер и далее добавляем данные в архив
-            .then(x => {
-                zip.addFile(i + '.jpg', Buffer.from(x)); //во время каждой итерации открываем файл добавляем новые данные и сразу пишем его
-                zip.writeZip('files.zip');            //чтобы не держать в памяти архив со всеми изображениями
-            });
-    })
+    const i =0;
+    zip.writeZip('files.zip');
+    const exec = (links,i) => { //рекурсивная функция последовательной загрузки изображения и добавления в архив
+        if(i<links.length) {
+            fetch(links[i])
+                .then(x => x.arrayBuffer())//Преобразуем ответ в буффер и далее добавляем данные в архив
+                .then(x => {
+                    zip.addFile(i + '.jpg', Buffer.from(x));//во время каждой итерации открываем файл добавляем новые данные и сразу пишем его
+                    zip.writeZip('files.zip');//чтобы не держать в памяти архив со всеми изображениями
+                    i++;
+                    exec(links, i);
+                })
+        }else{
+            console.log('done')
+        }
+    }
+    exec(links,i);
 }
 
 getLinks()

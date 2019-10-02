@@ -1,36 +1,48 @@
 const fetch = require('node-fetch');
 const jsdom = require('jsdom');
 const { JSDOM } = jsdom;
+const archiver = require('archiver');
+const fs = require('fs');
 
-const getLinks = async () => { //получаем массив ссылок на изображения с https://yandex.ru/images/
-    const body = await fetch(`https://yandex.ru/images/`).then(x=>x.text())
+const getLinks = async () => {
+    const body = await fetch(`https://yandex.ru/images/`).then(x => x.text())
     const dom = new JSDOM(body);
-    return Array.from(dom.window.document.getElementsByTagName('img')) //фильтруем возвращаемые url изображений только с абсолюными путями
+    return Array.from(dom.window.document.getElementsByTagName('img'))
         .map(t => t.src)
-        .filter(t=>t.indexOf('http')>-1)
+        .filter(t => ~t.indexOf('http'))
 }
 
-const toZip = (links) =>{
-    const AdmZip = require('adm-zip');
-    const zip = new AdmZip();
-    const i =0;
-    zip.writeZip('files.zip');
-    const exec = (links,i) => { //рекурсивная функция последовательной загрузки изображения и добавления в архив
-        if(i<links.length) {
-            fetch(links[i])
-                .then(x => x.arrayBuffer())//Преобразуем ответ в буффер и далее добавляем данные в архив
-                .then(x => {
-                    zip.addFile(i + '.jpg', Buffer.from(x));//во время каждой итерации открываем файл добавляем новые данные и сразу пишем его
-                    zip.writeZip('files.zip');//чтобы не держать в памяти архив со всеми изображениями
-                    i++;
-                    exec(links, i);
-                })
-        }else{
-            console.log('done')
-        }
+const toZip = (links) => {
+    const output = fs.createWriteStream(__dirname + '/files.zip');
+    const archive = archiver('zip');
+    archive.pipe(output)
+    links.reduce((prom, link) => {
+        return prom.then(() => {
+            return new Promise(resolve => {
+                fetch(link)
+                    .then(x => x.arrayBuffer())
+                    .then(x => {
+                        console.log(`Getted ${link}`)
+                        archive
+                            .append(Buffer.from(x), { name : `${Math.random()}.jpg`.replace('.','') })
+                        resolve()
+                    });
+            });
+        });
+    }, Promise.resolve()).then(() => {
+            archive.finalize()
+            console.log('Done')
+    });
+}
+
+const myTest = async () => {
+    let links = [];
+    for (let i = 0; i < 4; i++) {
+        await getLinks()
+            .then(arr => links=[...links,...arr]);
     }
-    exec(links,i);
+    console.log(`Fetched ${links.length} images from https://yandex.ru/images/`)
+    toZip(links)
 }
 
-getLinks()
-    .then(links => toZip(links));
+myTest()

@@ -4,10 +4,9 @@ const {JSDOM} = jsdom;
 const archiver = require('archiver');
 const fs = require('fs');
 const { PassThrough } = require('stream');
-var HttpsProxyAgent = require('https-proxy-agent');
 
 const getLinks = async () => {
-    const body = await fetch(`https://yandex.ru/images/`,{ agent:new HttpsProxyAgent('http://10.181.72.20:3128')}).then(x => x.text());
+    const body = await fetch(`https://yandex.ru/images/`).then(x => x.text());
     const dom = new JSDOM(body);
     return Array.from(dom.window.document.getElementsByTagName('img'))
         .map(t => t.src)
@@ -21,7 +20,7 @@ const toZip = async (links) => {
     await links.reduce((prom, link) => {
             return prom.then(() => {
                 return new Promise(async(resolve) => {
-                    const image = await fetch(link, { agent : new HttpsProxyAgent('http://10.181.72.20:3128') }).then(x => x.body.pipe(new PassThrough().on('end', () => {console.log(`link ${link}`);resolve()})))
+                    const image = await fetch(link).then(x => x.body.pipe(new PassThrough().on('end', () => {console.log(`link ${link}`);resolve()})))
                     await archive.append(image, { name : `${Math.random()}.jpg`.replace('.', '') });
                 });
             })

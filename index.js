@@ -5,6 +5,7 @@ const archiver = require('archiver');
 const fs = require('fs');
 const { PassThrough } = require('stream');
 
+
 const getLinks = async () => {
     const body = await fetch(`https://yandex.ru/images/`).then(x => x.text());
     const dom = new JSDOM(body);
@@ -25,7 +26,7 @@ const toZip = async (links) => {
                 });
             })
     }, Promise.resolve());
-    await archive.finalize();
+    archive.finalize();
 }
 
 const myTest = async () => {

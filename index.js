@@ -3,46 +3,40 @@ const jsdom = require('jsdom');
 const {JSDOM} = jsdom;
 const archiver = require('archiver');
 const fs = require('fs');
-const { PassThrough } = require('stream')
+const { PassThrough } = require('stream');
+var HttpsProxyAgent = require('https-proxy-agent');
 
 const getLinks = async () => {
-    const body = await fetch(`https://yandex.ru/images/`).then(x => x.text())
+    const body = await fetch(`https://yandex.ru/images/`,{ agent:new HttpsProxyAgent('http://10.181.72.20:3128')}).then(x => x.text());
     const dom = new JSDOM(body);
     return Array.from(dom.window.document.getElementsByTagName('img'))
         .map(t => t.src)
         .filter(t => ~t.indexOf('http'))
 }
 
-const toZip = (links) => {
-    const output = fs.createWriteStream(__dirname + '/files.zip')
-        .on('close',()=>console.log('Done'))
-    const archive = archiver('zip');
-    archive.pipe(output)
-    links.reduce((prom, link) => {
-        return prom.then(() => {
-            return new Promise(resolve => {
-                fetch(link)
-                    .then(x => {
-                        const body = x.body.pipe(new PassThrough()
-                            .on('end',()=>console.log(`link ${link}`)))
-                        archive.append(body,{name: `${Math.random()}.jpg`.replace('.', '')})
-                        resolve()
-                    })
-            });
-        });
-    }, Promise.resolve()).then(() => {
-        archive.finalize()
-    });
+const toZip = async (links) => {
+    const output = fs.createWriteStream(__dirname + '/files.zip').on('close',()=>console.log('WriteStream close'));
+    const archive = archiver('zip').on('end',()=>console.log('Zip done'));
+    archive.pipe(output);
+    await links.reduce((prom, link) => {
+            return prom.then(() => {
+                return new Promise(async(resolve) => {
+                    const image = await fetch(link, { agent : new HttpsProxyAgent('http://10.181.72.20:3128') }).then(x => x.body.pipe(new PassThrough().on('end', () => {console.log(`link ${link}`);resolve()})))
+                    await archive.append(image, { name : `${Math.random()}.jpg`.replace('.', '') });
+                });
+            })
+    }, Promise.resolve());
+    await archive.finalize();
 }
 
 const myTest = async () => {
     let links = [];
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 1; i++) {
         await getLinks()
             .then(arr => links = [...links, ...arr]);
     }
-    console.log(`Fetched ${links.length} images from https://yandex.ru/images/`)
-    toZip(links)
-}
+    console.log(`Fetched ${links.length} images from https://yandex.ru/images/`);
+    await toZip(links);
+};
 
-myTest()
+myTest();
